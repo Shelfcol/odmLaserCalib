@@ -434,8 +434,8 @@ void cSolver::compute_disagreement(cSynchronizer::sync_data &calib_data, const c
   double l_plus_s[3];
   double o_plus_l[3];
 
-  oplus_d(res.l, calib_data.scan_match_results, l_plus_s);
-  oplus_d(calib_data.o, res.l, o_plus_l);
+  oplus_d(res.l, calib_data.scan_match_results, l_plus_s); // l+s
+  oplus_d(calib_data.o, res.l, o_plus_l); //  r+l
 
   for (int i = 0; i < 3; i++)
   {
