@@ -4,6 +4,7 @@ project(laser-odom_calibration)
 # Detection of CSM library using CMake routines
 #find_package(PkgConfig REQUIRED)
 #pkg_check_modules(CSM REQUIRED csm)
+set(CMAKE_CXX_FLAGS "-std=c++14")
 
 ##IF(${CSM_FOUND})
 #        MESSAGE("CSM_LIBRARY_DIRS: ${CSM_LIBRARY_DIRS}")
@@ -59,7 +60,6 @@ ADD_LIBRARY(csm_eigen
 
 # Various flags
 
-set(CMAKE_CXX_FLAGS "-std=c++11")
 # SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 # SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ggdb")
 # SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -O2 ")
@@ -70,8 +70,10 @@ set(CMAKE_CXX_FLAGS "-std=c++11")
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED)
+include_directories("/usr/include/eigen3")
+# find_package(Eigen3 REQUIRED)
 
-find_package(Eigen3 REQUIRED)
+find_package(Ceres REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 find_package(catkin REQUIRED COMPONENTS
@@ -186,6 +188,7 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIR}
+  ${CERES_INCLUDE_DIRS}
 )
 
 # A test
@@ -193,4 +196,4 @@ include_directories(
 # TARGET_LINK_LIBRARIES(test_calib ${CSM_LIBRARIES} ${catkin_LIBRARIES} ${EIGEN3_INCLUDE_DIR})
 
 ADD_EXECUTABLE(io_test src/io_test.cpp src/io.cpp src/utils.cpp src/scan_match.cpp src/synchronizer.cpp src/solver.cpp)
-TARGET_LINK_LIBRARIES(io_test ${catkin_LIBRARIES} ${EIGEN3_INCLUDE_DIR} csm_eigen)
+TARGET_LINK_LIBRARIES(io_test ${catkin_LIBRARIES} ${EIGEN3_INCLUDE_DIR} ${CERES_LIBRARIES} csm_eigen)

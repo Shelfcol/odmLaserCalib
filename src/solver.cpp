@@ -18,7 +18,8 @@ void cSolver::calib(std::vector<cSynchronizer::sync_data> &calib_data, int outli
     calib_history[iteration] = calib_data;
 
     // Calibration
-    if (!solve(calib_data, 0, 75, res))
+    // if (!solve(calib_data, 0, 75, res))
+    if (!solve(calib_data, res))
     {
       std::cout << colouredString("Failed calibration.", RED, BOLD) << std::endl;
       continue;
@@ -127,6 +128,40 @@ void cSolver::calib(std::vector<cSynchronizer::sync_data> &calib_data, int outli
   return;
 
 }
+
+
+
+bool cSolver::solve(const std::vector<cSynchronizer::sync_data> &calib_data,struct calib_result& res)
+{
+  // cSynchronizer::sync_data
+  ceres::Problem problem;
+  // Axle between wheels: 0.606049
+  // LiDAR-odom x: 0.395686
+  // LiDAR-odom y: 0.00531662
+  // LiDAR-odom yaw: 0.00770719
+  // Left wheel radius: 50.8224
+  // Right wheel radius: 50.759
+
+  double param[6]={0.5,0.5,0.5,0.1,0.1,0.1}; // r_L,r_R,b, lx,ly,l_theta
+
+  for(size_t i=0;i<calib_data.size();++i)
+  {
+    ceres::CostFunction* cost_func = WheelLaserErr::Create(calib_data[i]);
+    problem.AddResidualBlock(cost_func,ceres::HuberLoss(0.1),param);
+  }
+  ceres::Solver::Options options;
+  ceres::Solver::Summary summary;
+  ceres::Solve(options,&problem,&summary);
+  std::cout<<summary.BriefReport()<<std::endl;
+  res.radius_l=param[0];
+  res.radius_r=param[1];
+  res.axle=param[2];
+  res.l[0]=param[3];
+  res.l[1]=param[4];
+  res.l[2]=param[5];
+  return 1;
+}
+
 
 bool cSolver::solve(const std::vector<cSynchronizer::sync_data> &calib_data,
                     int mode, double max_cond_number, calib_result &res)

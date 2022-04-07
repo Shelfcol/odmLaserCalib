@@ -10,7 +10,10 @@
 #ifndef NAN
 #define NAN GSL_NAN
 #endif
-     
+
+#include <eigen3/Eigen/Dense>
+#include <ceres/ceres.h>    
+
 /** Returns norm of 2D point p */
 double norm_d(const double p[2]);
 
@@ -34,7 +37,11 @@ int minmax(int from,int to,int x);
 void copy_d(const double*from, int n, double*to);
 
 /** These are the operators defined in Smith & Cheeseman  */
+template<typename T>
+void ominus_d(const T x[3], T res[3]);
 void ominus_d(const double x[3], double res[3]);
+template<typename T>
+void oplus_d(const T x1[3], const T x2[3], T res[3]);
 void oplus_d(const double x1[3], const double x2[3], double res[3]);
 void pose_diff_d(const double second[3], const double first[3], double res[3]);
 	

@@ -2,6 +2,66 @@
 #define CALIB_SOLVER_H
 
 #include <synchronizer.h>
+#include <ceres/ceres.h>
+
+class WheelLaserErr{
+public:
+  WheelLaserErr(const cSynchronizer::sync_data& sync_d):sync_d_(sync_d){}
+  template<typename T>
+  bool operator()(const T* const param, T* res) const { // r_L,r_R,b, lx,ly,l_theta
+    T r_L = param[0];
+    T r_R = param[1];
+    T b = param[2];
+    T lx = param[3];
+    T ly = param[4];
+    T l_theta = param[5];
+
+    // calc wheel odom
+    T J11 = r_L / T(2);
+    T J12 = r_R / T(2);
+    T J21 = - r_L / res.axle;
+    T J22 = r_R / res.axle;
+
+    T speed = J11 * sync_d_.velocity_left + J12 * sync_d_.velocity_right; // 速度
+    T omega = J21 * sync_d_.velocity_left + J22 * sync_d_.velocity_right; // 角速度
+
+    T o_theta = sync_d_.T * omega; // 旋转的角度
+
+    T t1, t2;
+    if (fabs(o_theta) > 1e-12) // 有旋转
+    {
+      t1 = sin(o_theta) / o_theta;
+      t2 = (1 - cos(o_theta)) / o_theta;
+    }
+    else
+    {
+      t1 = 1;
+      t2 = 0;
+    }
+
+    T dx = t1 * speed * calib_data.T;
+    T dy = t2 * speed * calib_data.T;
+    T dtheta = o_theta;
+
+    T l[3]={lx,ly,l_theta};
+    T r[3]={dx,dy,dtheta};
+    T res_right[3];
+    ominus_d<T>(l, res_right);
+    oplus_d<T>(res_right,r,res_right);
+    oplus_d<T>(res_right,l,res_right);
+    res[0]=T(sync_d_.scan_match_results[0])-res_right[0];
+    res[1]=T(sync_d_.scan_match_results[1])-res_right[1];
+    res[2]=T(sync_d_.scan_match_results[2])-res_right[2];
+
+    return true;
+  }
+  static ceres::CostFunction* Create(const cSynchronizer::sync_data& sync_d){
+    return  new ceres::AutoDiffCostFunction<WheelLaserErr,3,6>(new WheelLaserErr(sync_d));
+  }
+private:
+  cSynchronizer::sync_data sync_d_;
+};
+
 
 class cSolver{
 
@@ -27,6 +87,7 @@ public:
   };
 
   bool solve(const std::vector<cSynchronizer::sync_data> &calib_data, int mode, double max_cond_number, struct calib_result& res);
+  bool solve(const std::vector<cSynchronizer::sync_data> &calib_data,struct calib_result& res);
 
   void calib(std::vector<cSynchronizer::sync_data> &calib_data, int outliers_iterations);
 

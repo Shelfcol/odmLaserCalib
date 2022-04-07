@@ -93,6 +93,15 @@ void ominus_d(const double x[3], double res[3]) {
 	res[2] = -x[2];
 }
 
+template<typename T>
+void ominus_d(const T x[3], T res[3]) {
+	T c = ceres::cos(x[2]);
+	T s = ceres::sin(x[2]);
+	res[0] = -c*x[0]-s*x[1];
+	res[1] =  s*x[0]-c*x[1];
+	res[2] = -x[2];
+}
+
 // SE(2)加法
 /** safe if res == x1 */
 void oplus_d(const double x1[3], const double x2[3], double res[3]) {
@@ -101,6 +110,17 @@ void oplus_d(const double x1[3], const double x2[3], double res[3]) {
 	double x = x1[0]+c*x2[0]-s*x2[1];
 	double y = x1[1]+s*x2[0]+c*x2[1];
  	double theta = x1[2]+x2[2];
+	res[0]=x;
+	res[1]=y;
+	res[2]=theta;
+}
+template<typename T>
+void oplus_d(const T x1[3], const T x2[3], T res[3]) {
+	T c = ceres::cos(x1[2]);
+	T s = ceres::sin(x1[2]);
+	T x = x1[0]+c*x2[0]-s*x2[1];
+	T y = x1[1]+s*x2[0]+c*x2[1];
+ 	T theta = x1[2]+x2[2];
 	res[0]=x;
 	res[1]=y;
 	res[2]=theta;
