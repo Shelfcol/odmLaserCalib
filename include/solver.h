@@ -3,6 +3,31 @@
 
 #include <synchronizer.h>
 #include <ceres/ceres.h>
+#include <csm/math_utils.h>
+
+template<typename T>
+void ominus_d_template(const T x[3], T res[3]) {
+	T c = ceres::cos(x[2]);
+	T s = ceres::sin(x[2]);
+	res[0] = -c*x[0]-s*x[1];
+	res[1] =  s*x[0]-c*x[1];
+	res[2] = -x[2];
+}
+
+
+template<typename T>
+void oplus_d_template(const T x1[3], const T x2[3], T res[3]) {
+	T c = ceres::cos(x1[2]);
+	T s = ceres::sin(x1[2]);
+	T x = x1[0] + c*x2[0] - s*x2[1];
+	T y = x1[1] + s*x2[0] + c*x2[1];
+ 	T theta = x1[2] + x2[2];
+	res[0] = x;
+	res[1] = y;
+	res[2] = theta;
+}
+
+
 
 class WheelLaserErr{
 public:
@@ -19,8 +44,8 @@ public:
     // calc wheel odom
     T J11 = r_L / T(2);
     T J12 = r_R / T(2);
-    T J21 = - r_L / res.axle;
-    T J22 = r_R / res.axle;
+    T J21 = - r_L / b;
+    T J22 = r_R / b;
 
     T speed = J11 * sync_d_.velocity_left + J12 * sync_d_.velocity_right; // 速度
     T omega = J21 * sync_d_.velocity_left + J22 * sync_d_.velocity_right; // 角速度
@@ -28,27 +53,27 @@ public:
     T o_theta = sync_d_.T * omega; // 旋转的角度
 
     T t1, t2;
-    if (fabs(o_theta) > 1e-12) // 有旋转
+    if (ceres::abs(o_theta) > 1e-12) // 有旋转
     {
-      t1 = sin(o_theta) / o_theta;
-      t2 = (1 - cos(o_theta)) / o_theta;
+      t1 = ceres::sin(o_theta) / o_theta;
+      t2 = (T(1) - ceres::cos(o_theta)) / o_theta;
     }
     else
     {
-      t1 = 1;
-      t2 = 0;
+      t1 = T(1);
+      t2 = T(0);
     }
 
-    T dx = t1 * speed * calib_data.T;
-    T dy = t2 * speed * calib_data.T;
+    T dx = t1 * speed * sync_d_.T;
+    T dy = t2 * speed * sync_d_.T;
     T dtheta = o_theta;
 
     T l[3]={lx,ly,l_theta};
     T r[3]={dx,dy,dtheta};
     T res_right[3];
-    ominus_d<T>(l, res_right);
-    oplus_d<T>(res_right,r,res_right);
-    oplus_d<T>(res_right,l,res_right);
+    ominus_d_template<T>(l, res_right);
+    oplus_d_template<T>(res_right,r,res_right);
+    oplus_d_template<T>(res_right,l,res_right);
     res[0]=T(sync_d_.scan_match_results[0])-res_right[0];
     res[1]=T(sync_d_.scan_match_results[1])-res_right[1];
     res[2]=T(sync_d_.scan_match_results[2])-res_right[2];

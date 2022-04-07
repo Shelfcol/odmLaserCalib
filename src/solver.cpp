@@ -3,6 +3,9 @@
 #include <utils.h>
 #include <eigen3/Eigen/Eigenvalues>
 
+
+
+
 cSolver::cSolver()
 {
 
@@ -95,10 +98,10 @@ void cSolver::calib(std::vector<cSynchronizer::sync_data> &calib_data, int outli
   int estimate_with = 1;
   estimate_noise(calib_history[estimate_with], res, laser_std_x, laser_std_y, laser_std_th);
 
-    /* Now compute the FIM */
-    // 论文公式 9 误差的协方差
-//  std::cout <<'\n' << "Noise: " << '\n' << laser_std_x << ' ' << laser_std_y
-//            << ' ' << laser_std_th << std::endl;
+  /* Now compute the FIM */
+  // 论文公式 9 误差的协方差
+  //  std::cout <<'\n' << "Noise: " << '\n' << laser_std_x << ' ' << laser_std_y
+  //            << ' ' << laser_std_th << std::endl;
 
   Eigen::Matrix3d laser_fim = Eigen::Matrix3d::Zero();
   laser_fim(0,0) = (float)1 / (laser_std_x * laser_std_x);
@@ -142,23 +145,23 @@ bool cSolver::solve(const std::vector<cSynchronizer::sync_data> &calib_data,stru
   // Left wheel radius: 50.8224
   // Right wheel radius: 50.759
 
-  double param[6]={0.5,0.5,0.5,0.1,0.1,0.1}; // r_L,r_R,b, lx,ly,l_theta
+  double param[6] = {0.5,0.5,0.5,0.1,0.1,0.1}; // r_L,r_R,b, lx,ly,l_theta
 
   for(size_t i=0;i<calib_data.size();++i)
   {
     ceres::CostFunction* cost_func = WheelLaserErr::Create(calib_data[i]);
-    problem.AddResidualBlock(cost_func,ceres::HuberLoss(0.1),param);
+    problem.AddResidualBlock(cost_func, new ceres::HuberLoss(0.1),param);
   }
   ceres::Solver::Options options;
   ceres::Solver::Summary summary;
-  ceres::Solve(options,&problem,&summary);
+  ceres::Solve(options, &problem, &summary);
   std::cout<<summary.BriefReport()<<std::endl;
-  res.radius_l=param[0];
-  res.radius_r=param[1];
-  res.axle=param[2];
-  res.l[0]=param[3];
-  res.l[1]=param[4];
-  res.l[2]=param[5];
+  res.radius_l = param[0];
+  res.radius_r = param[1];
+  res.axle = param[2];
+  res.l[0] = param[3];
+  res.l[1] = param[4];
+  res.l[2] = param[5];
   return 1;
 }
 
