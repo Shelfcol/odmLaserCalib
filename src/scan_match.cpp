@@ -42,7 +42,7 @@ cScanMatch::cScanMatch() {
   params.max_reading = 30.0;
 
 }
-
+// 将角度和range存入
 void cScanMatch::scanToLDP(const std::vector<messageIO::laserScanData> &scan,
                            std::vector<LDP> &ldp) {
 
@@ -53,12 +53,12 @@ void cScanMatch::scanToLDP(const std::vector<messageIO::laserScanData> &scan,
     LDP single_ldp;
     unsigned int n = scan[i].ranges.size();
     single_ldp = ld_alloc_new(n);
-    for (int j = 0; j < n ; j++)
+    for (int j = 0; j < n ; j++)// 遍历每一帧scan中的每个点
     {
       double r = scan[i].ranges[j];
       if ((r > scan[i].min_range) && (r < scan[i].max_range))
       {
-        single_ldp->valid[j] = 1;
+        single_ldp->valid[j] = 1; // 数据在范围以内，则valid=1，readings=r；否则valid=0,readings=-1
         single_ldp->readings[j] = r;
       }
       else
@@ -67,8 +67,8 @@ void cScanMatch::scanToLDP(const std::vector<messageIO::laserScanData> &scan,
         single_ldp->readings[j] = -1;
       }
 
-      single_ldp->theta[j] = scan[i].min_angle + j * scan[i].angle_increment;
-      single_ldp->cluster[j] = -1;
+      single_ldp->theta[j] = scan[i].min_angle + j * scan[i].angle_increment; // 角度 theta = min_angle + j*angle_increment
+      single_ldp->cluster[j] = -1; //未分类
     }
 
     single_ldp->min_theta = single_ldp->theta[0];
@@ -95,6 +95,7 @@ void cScanMatch::match(const std::vector<messageIO::laserScanData> &scan,
   int invalid_matches = 0;
   int scan_odom_it = 0;
 
+  // 给一个初始值
   csm_odom first_odom;
   first_odom.x = -5.4056;
   first_odom.y = 13.6702;
@@ -115,13 +116,13 @@ void cScanMatch::match(const std::vector<messageIO::laserScanData> &scan,
     results.dx_dy1_m = 0;
     results.dx_dy2_m = 0;
 
-    LDP ref_scan = ldp[scan_odom_it];
+    LDP ref_scan = ldp[scan_odom_it]; // 参考帧
     LDP sens_scan = ldp[i];
 
     params.laser_ref = ref_scan;
     params.laser_sens = sens_scan;
 
-    sm_icp(&params, &results);
+    sm_icp(&params, &results); //ICP配准
 
     csm_odom last_odom;
     last_odom.timestamp = scan[i].timestamp;
@@ -135,7 +136,7 @@ void cScanMatch::match(const std::vector<messageIO::laserScanData> &scan,
      *  -       -       -       -     -                                         -
      *
      */
-
+    //? 顺序?
     last_odom.x = results.x[0] + scan_odom.back().x * cos(results.x[2]) - scan_odom.back().y * sin(results.x[2]);
     last_odom.y = results.x[1] + scan_odom.back().x * sin(results.x[2]) + scan_odom.back().y * cos(results.x[2]);
     last_odom.theta = rad_fix(results.x[2], scan_odom.back().theta);

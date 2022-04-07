@@ -32,11 +32,13 @@ int main(int argc, char **argv)
   std::string syncfile = file_path + bagname + "sync_results.txt";
   std::string smfile = file_path + bagname + "scan_match_results.txt";
   std::string odomfile = file_path + bagname + "odom.txt";
-//  std::string laser_topic = "/scan";
-//  std::string odom_topic = "/odom";
+  //  std::string laser_topic = "/scan";
+  //  std::string odom_topic = "/odom";
   std::vector<messageIO::laserScanData> laser_data(0);
   std::vector<messageIO::odometerData> odom_data(0);
 
+  // 读取数据
+  // laserscan数据，左右轮的速度
   dataIO.readDataFromBag(bagfile, laser_topic, odom_topic, odom_data, laser_data);
 
   std::cout << colouredString("Hi!", WHITE, REGULAR) << std::endl;
@@ -55,7 +57,7 @@ int main(int argc, char **argv)
   std::cout << colouredString("LDP numbers: ", WHITE, REGULAR) << ldp.size() << std::endl;
 
   std::cout << colouredString("Canonical scan matching...", YELLOW, REGULAR) << std::endl;
-  cScan.match(laser_data, ldp, scan_odom, match_results);
+  cScan.match(laser_data, ldp, scan_odom, match_results); // 二维匹配，输出里程计数据,并且输出匹配的相邻帧结果
   std::cout << colouredString("Matching finished!", GREEN, REGULAR) << std::endl;
 
   if (scan_odom.size() == 0) {
@@ -63,14 +65,14 @@ int main(int argc, char **argv)
   }
 
   std::cout << colouredString("Writing results...", YELLOW, REGULAR) << std::endl;
-
+  // 输入里程计数据保存
   std::ofstream fout(resultfile);
   for (int i = 0; i < scan_odom.size(); i++)
   {
     fout << scan_odom[i].timestamp << ' ' << scan_odom[i].x << ' ' << scan_odom[i].y
          << ' ' << scan_odom[i].theta << '\n';
   }
-
+  // 两帧之间的位姿变换
   std::ofstream fout3(smfile);
   for (int i = 0; i < match_results.size(); i++)
   {
@@ -99,7 +101,7 @@ int main(int argc, char **argv)
 
   std::cout << colouredString("Start synchronzing...", YELLOW, REGULAR) << std::endl;
   std::vector<cSynchronizer::sync_data> sync_results;
-  cSync.synchronizeLaserOdom(odom_data, match_results, sync_results);
+  cSync.synchronizeLaserOdom(odom_data, match_results, sync_results); // 时间对齐
   std::cout << colouredString("Sync finished!", GREEN, REGULAR) << std::endl;
 
   std::ofstream fout2(syncfile);
@@ -115,8 +117,8 @@ int main(int argc, char **argv)
   fout2.close();
 
   std::cout << colouredString("Sync results saved!", GREEN, REGULAR) << std::endl;
-
-  cSolve.calib(sync_results, 4);
+  // dT,v_l,v_r,x,y,theta
+  cSolve.calib(sync_results, 4); // 迭代4次
 
   ros::spin();
   return 0;

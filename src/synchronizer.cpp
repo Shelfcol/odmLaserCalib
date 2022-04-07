@@ -24,13 +24,13 @@ void cSynchronizer::synchronizeLaserOdom(const std::vector<messageIO::odometerDa
 
   std::cout << '\n' << "Synchronzing progress: ";
 
-  for (int i = 5; i < csm_results.size(); i++)
+  for (int i = 5; i < csm_results.size(); i++) // 以激光里程计数据为准
   {
     // Find nearly timestamp for odometer.
-    for (int j = odom_it; j < odom_data.size(); j++)
+    for (int j = odom_it; j < odom_data.size(); j++) //找到相邻左右时刻的左右轮速
     {
       if ((odom_data[j].timestamp.toSec() < csm_results[i].start_t.toSec()) &&
-          (odom_data[j+1].timestamp.toSec() > csm_results[i].start_t.toSec()))
+          (odom_data[j+1].timestamp.toSec() > csm_results[i].start_t.toSec())) //为csm的dT的起始时刻找到前后两个时刻的轮速
       {
         start_t_1 = odom_data[j].timestamp;
         start_t_2 = odom_data[j+1].timestamp;
@@ -41,7 +41,7 @@ void cSynchronizer::synchronizeLaserOdom(const std::vector<messageIO::odometerDa
         odom_it = j;
         continue;
       }
-      if (odom_data[j].timestamp.toSec() == csm_results[i].start_t.toSec())
+      if (odom_data[j].timestamp.toSec() == csm_results[i].start_t.toSec()) // 刚好找到
       {
         start_t_1 = odom_data[j].timestamp;
         start_t_2 = odom_data[j].timestamp;
@@ -53,7 +53,7 @@ void cSynchronizer::synchronizeLaserOdom(const std::vector<messageIO::odometerDa
         continue;
       }
       if ((odom_data[j].timestamp.toSec() < csm_results[i].end_t.toSec()) &&
-          (odom_data[j+1].timestamp.toSec() > csm_results[i].end_t.toSec()))
+          (odom_data[j+1].timestamp.toSec() > csm_results[i].end_t.toSec())) // 为csm的dT的终止时刻找到前后两个时刻的轮速
       {
         end_t_1 = odom_data[j].timestamp;
         end_t_2 = odom_data[j+1].timestamp;
@@ -64,7 +64,7 @@ void cSynchronizer::synchronizeLaserOdom(const std::vector<messageIO::odometerDa
         odom_it = j;
         continue;
       }
-      if (odom_data[j].timestamp.toSec() == csm_results[i].end_t.toSec())
+      if (odom_data[j].timestamp.toSec() == csm_results[i].end_t.toSec())// 刚好找到
       {
         end_t_1 = odom_data[j].timestamp;
         end_t_2 = odom_data[j].timestamp;
@@ -80,7 +80,7 @@ void cSynchronizer::synchronizeLaserOdom(const std::vector<messageIO::odometerDa
     float alpha = (csm_results[i].start_t.toSec() - start_t_1.toSec()) /
         (start_t_2.toSec() - start_t_1.toSec());
 
-    double velocity_start_l = alpha * start_v_1_l + (1 - alpha) * start_v_2_l;
+    double velocity_start_l = alpha * start_v_1_l + (1 - alpha) * start_v_2_l; // 线性插值
     double velocity_start_r = alpha * start_v_1_r + (1 - alpha) * start_v_2_r;
 
     float beta = (csm_results[i].end_t.toSec() - end_t_1.toSec()) /
@@ -91,18 +91,19 @@ void cSynchronizer::synchronizeLaserOdom(const std::vector<messageIO::odometerDa
 
     sync_data single_sync_data;
     single_sync_data.T = csm_results[i].T;
-    single_sync_data.velocity_left = (velocity_start_l + velocity_end_l) / 2;
+    single_sync_data.velocity_left = (velocity_start_l + velocity_end_l) / 2; // 前后时刻的速度均值作为这个时间段内的轮速
     single_sync_data.velocity_right = (velocity_start_r + velocity_end_r) / 2;
     single_sync_data.scan_match_results[0] = csm_results[i].scan_match_results[0];
     single_sync_data.scan_match_results[1] = csm_results[i].scan_match_results[1];
     single_sync_data.scan_match_results[2] = csm_results[i].scan_match_results[2];
 
-    if(std::isnan(single_sync_data.velocity_left) || std::isnan(single_sync_data.velocity_right))
+    if(std::isnan(single_sync_data.velocity_left) || std::isnan(single_sync_data.velocity_right)) // 判断是否为nan
     {
       continue;
     }
     else sync_results.push_back(single_sync_data);
 
+    // 因为下次是从odom_it开始遍历，所以有可能初始的左有速度不变
     start_t_1 = end_t_1;
     start_t_2 = end_t_2;
     start_v_1_l = end_v_1_l;

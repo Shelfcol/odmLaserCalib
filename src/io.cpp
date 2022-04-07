@@ -69,6 +69,7 @@ void messageIO::readDataFromBag(const std::string &bag_name, const std::string &
 //      odom_data.push_back(tmp);
 //    }
 //
+    // 输入左右轮的速度
     geometry_msgs::Vector3StampedConstPtr odom = m.instantiate<geometry_msgs::Vector3Stamped>();
     if (odom != NULL) {
       odometerData tmp;

@@ -30,12 +30,13 @@ void cSolver::calib(std::vector<cSynchronizer::sync_data> &calib_data, int outli
                 << "Right wheel radius: " << res.radius_r << std::endl;
     }
 
-    // Compute residuals
+    // 公式9 Compute residuals
     for (int i = 0; i < calib_data.size(); i++)
     {
       compute_disagreement(calib_data[i], res);
     }
 
+    // 计算error  theta和 xy
     // Sort residuals and compute thresholds
     std::vector<double> err_theta;
     for (int i = 0; i < calib_data.size(); i++)
@@ -57,8 +58,8 @@ void cSolver::calib(std::vector<cSynchronizer::sync_data> &calib_data, int outli
     std::vector<double> err_xy_sorted(err_xy);
     std::sort(err_xy_sorted.begin(), err_xy_sorted.end());
 
-    int threshold_index = (int) std::round ((0.99) * calib_data.size());
-    double threshold_theta = err_theta_sorted[threshold_index];
+    int threshold_index = (int) std::round ((0.99) * calib_data.size()); // 每次剔除1%
+    double threshold_theta = err_theta_sorted[threshold_index]; // 得到需要剔除的误差阈值
     double threshold_xy = err_xy_sorted[threshold_index];
 
     int noutliers = 0;
@@ -71,7 +72,7 @@ void cSolver::calib(std::vector<cSynchronizer::sync_data> &calib_data, int outli
       int xy = err_xy[i] > threshold_xy;
       int theta = err_theta[i] > threshold_theta;
 
-      calib_data[i].mark_as_outlier = xy | theta;
+      calib_data[i].mark_as_outlier = xy | theta;  // 只要有一个超过误差，就标记为外点
 
       if(xy) noutliers_xy++;
       if(theta) noutliers_theta++;
@@ -79,6 +80,7 @@ void cSolver::calib(std::vector<cSynchronizer::sync_data> &calib_data, int outli
       if(xy || theta) noutliers ++;
     }
 
+    // 将calib_data中非outlier的取出来，然后迭代进行
     std::vector<cSynchronizer::sync_data> n;
     for (int i = 0; i < calib_data.size(); i++)
     {
@@ -370,13 +372,13 @@ void cSolver::compute_disagreement(cSynchronizer::sync_data &calib_data, const c
   double J21 = - res.radius_l / res.axle;
   double J22 = res.radius_r / res.axle;
 
-  double speed = J11 * calib_data.velocity_left + J12 * calib_data.velocity_right;
-  double omega = J21 * calib_data.velocity_left + J22 * calib_data.velocity_right;
+  double speed = J11 * calib_data.velocity_left + J12 * calib_data.velocity_right; // 速度
+  double omega = J21 * calib_data.velocity_left + J22 * calib_data.velocity_right; // 角速度
 
-  double o_theta = calib_data.T * omega;
+  double o_theta = calib_data.T * omega; // 旋转的角度
 
   double t1, t2;
-  if (fabs(o_theta) > 1e-12)
+  if (fabs(o_theta) > 1e-12) // 有旋转
   {
     t1 = sin(o_theta) / o_theta;
     t2 = (1 - cos(o_theta)) / o_theta;

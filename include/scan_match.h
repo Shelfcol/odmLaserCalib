@@ -38,12 +38,13 @@ public:
   /*!
    * \brief The csm_results struct. Used
    * for storing CSM results each interval.
-   */
+   */ 
+  // 两帧之间的位姿变换
   struct csm_results {
-    ros::Time start_t;
+    ros::Time start_t;  // 起始时间
     ros::Time end_t;
-    double T;
-    double scan_match_results[3];
+    double T; // dt
+    double scan_match_results[3]; // x,y,theta
   };
 
   /*!

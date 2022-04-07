@@ -23,7 +23,7 @@ public:
     double axle;
 
     /** Laser pose */
-    double l[3];
+    double l[3]; // x,y,yaw
   };
 
   bool solve(const std::vector<cSynchronizer::sync_data> &calib_data, int mode, double max_cond_number, struct calib_result& res);

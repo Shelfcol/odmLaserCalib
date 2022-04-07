@@ -84,6 +84,7 @@ void copy_d(const double*from, int n, double*to) {
 	int i; for(i=0;i<n;i++) to[i] = from[i];
 }
 
+// SE(2)减法  
 void ominus_d(const double x[3], double res[3]) {
 	double c = cos(x[2]);
 	double s = sin(x[2]);
@@ -92,6 +93,7 @@ void ominus_d(const double x[3], double res[3]) {
 	res[2] = -x[2];
 }
 
+// SE(2)加法
 /** safe if res == x1 */
 void oplus_d(const double x1[3], const double x2[3], double res[3]) {
 	double c = cos(x1[2]);
@@ -116,7 +118,7 @@ void pose_diff_d(const double pose2[3], const double pose1[3], double res[3]) {
 	double temp[3];
 	ominus_d(pose1, temp);
 	oplus_d(temp, pose2, res);
-	
+	// 角度在[-pi,pi]
 	while(res[2] > +M_PI) res[2] -= 2*M_PI;
 	while(res[2] < -M_PI) res[2] += 2*M_PI;
 }
@@ -127,6 +129,7 @@ double square(double x) {
 
 double angleDiff(double a, double b) {
 	double t = a - b;
+	// 角度在[-pi,pi]
 	while(t<-M_PI) t+= 2*M_PI;
 	while(t>M_PI)  t-= 2*M_PI;
 	return t;
